@@ -1,0 +1,24 @@
+[project]
+name = "causal_analysis_agenticAI"
+version = "0.0.0"
+description = "Causal AI agentic framework workspace"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.13,<3.14"
+
+dependencies = [
+    "pandas",
+    "numpy",
+    "econml",
+    "scikit-learn",
+    "streamlit",
+    "scipy",
+    "langchain_openai",
+    "langchain",
+    "python-dotenv",
+    "altair==4.2.2",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
