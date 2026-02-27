@@ -34,7 +34,15 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.append(str(SCRIPTS_DIR))
 
 import dotenv
-# Load .env into environment (if present)
+# Prefer Streamlit Cloud secrets (safe on deploy). If present, set env var immediately.
+try:
+    cloud_key = st.secrets.get("OPENAI_API_KEY") if hasattr(st, "secrets") else None
+except Exception:
+    cloud_key = None
+if cloud_key:
+    os.environ["OPENAI_API_KEY"] = cloud_key
+
+# Load .env into environment (if present) but do NOT overwrite a cloud secret
 dotenv.load_dotenv(ROOT.parent / ".env")
 
 # Ensure .env key is cleaned (strip surrounding quotes) and exported to process env
