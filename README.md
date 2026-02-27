@@ -14,7 +14,7 @@ Quick start — Local development environment
 
 Prerequisites
 
-- macOS with Python 3.14 installed and available as `python3.14`.
+- macOS with Python 3.13 installed and available as `python3.13`.
 - (Optional) `uv` CLI on PATH if you prefer using it to manage virtual environments and installations.
 
 Create the virtual environment
@@ -22,13 +22,13 @@ Create the virtual environment
 Either (preferred if you have `uv`):
 
 ```bash
-uv create -p python3.14 causal_agent
+uv create -p python3.13 causal_agent
 ```
 
 Or fall back to the built-in venv:
 
 ```bash
-python3.14 -m venv causal_agent
+python3.13 -m venv causal_agent
 ```
 
 Activate the environment (zsh):

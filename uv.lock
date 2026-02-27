@@ -13,14 +13,3 @@ packages = [
   "langchain",
   "python-dotenv",
 ]
-
-# uv pip-style requirements (plain pip format)
-pandas
-numpy
-econml
-scikit-learn
-streamlit
-scipy
-langchain_openai
-langchain
-python-dotenv
