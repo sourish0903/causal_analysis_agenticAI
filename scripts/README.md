@@ -14,9 +14,36 @@ Files
   - Key idea: Uses econml's CausalForestDML to estimate τ(x), an observation-specific treatment effect, and fits a small decision tree on the estimated ITEs to produce interpretable population segments (leaves) for optimization.
   - Dependency: `econml` (imported as `from econml.dml import CausalForestDML`).
   - Brief mathematical formulation:
-    - Structural model: Y = g(X) + τ(X)·T + ε, where Y is outcome (Weekly_Sales), T is treatment (lever), X are covariates/confounders, and τ(X) is the heterogeneous treatment effect.
-    - Double machine learning (DML) orthogonalization: estimate nuisance functions m(X)=E[Y|X] and p(X)=E[T|X], form residuals \tilde Y = Y - m̂(X), \tilde T = T - p̂(X), then estimate τ(X) by fitting a flexible model (here a causal forest) to learn the mapping X ↦ E[\tilde Y | X, \tilde T]/E[\tilde T^2 | X] (intuitively the local slope of Y on T after removing confounding).
-    - CausalForestDML implements this procedure with ensemble trees to produce observation-level ITEs τ̂_i = τ̂(X_i).
+
+    - Structural model (display):
+
+      $$
+      Y = g(X) + \tau(X)\cdot T + \varepsilon,
+      $$
+
+      where $Y$ is the outcome (Weekly\_Sales), $T$ is the treatment (a lever), $X$ are covariates/confounders, $g(\cdot)$ is the baseline response surface, and $\tau(X)$ is the heterogeneous treatment effect (HTE).
+
+    - Double Machine Learning (DML) orthogonalization (display):
+
+      Estimate the nuisance functions
+      $$\hat m(X) \approx \mathbb{E}[Y\mid X], \quad \hat p(X) \approx \mathbb{E}[T\mid X],$$
+      form residuals
+      $$\tilde Y = Y - \hat m(X), \quad \tilde T = T - \hat p(X).$$
+
+      Then for each $X$ solve a local regression of $\tilde Y$ on $\tilde T$ to recover the local slope (the HTE). Formally one may write the target as the minimizer
+      $$
+      \tau^*(X) = \arg\min_{f} \; \mathbb{E}\big[(\tilde Y - f(X)\,\tilde T)^2 \mid X\big],
+      $$
+      whose closed-form population solution (when moments exist) is
+      $$
+      \tau^*(X) = \frac{\mathbb{E}[\tilde Y\,\tilde T \mid X]}{\mathbb{E}[\tilde T^2 \mid X]}.
+      $$
+
+      DML uses cross-fitting to obtain orthogonal (debiased) estimates of these nuisances so the downstream estimator for $\tau(X)$ is less sensitive to regularization error in nuisance learners.
+
+    - Causal forests (intuition):
+
+      `CausalForestDML` fits an ensemble of trees to estimate the mapping $X\mapsto\tau(X)$. Each tree partitions the covariate space and produces local treatment effect estimates; the forest aggregates these to produce observation-level ITEs $\hat\tau(X_i)$ and provides variance/uncertainty estimates over ITEs.
 
 - `causal_agentic_ai.py`
   - Purpose: High-level entry point and agent builder that ties LLMs (LangChain / LangGraph) to the analytic tools. Exposes helper functions and a `build_agent` function that composes an agent workflow and binds the analytic tool functions as callable tools for the LLM.

@@ -2,6 +2,8 @@
 
 This repository contains a small Causal AI agentic framework and supporting tools for causal analysis and optimization. It includes utilities for causal forests, helper tools, and an agent-building entrypoint designed to integrate with LLMs and LangGraph.
 
+Please refer scripts/README.md to have more deepdive into the Causal Framework.
+
 Purpose
 
 - Provide reusable causal analysis utilities (causal forests, variable impact, what-if analysis).
