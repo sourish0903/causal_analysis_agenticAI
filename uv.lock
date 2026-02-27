@@ -1,6 +1,7 @@
 # uv lockfile for causal_agent virtual environment
 
 version = 1
+requires-python = ">=3.13,<3.14"
 
 [pip]
 packages = [
