@@ -1,0 +1,10 @@
+# Plain pip-style requirements for installation (used by uv pip install --requirements)
+pandas
+numpy
+econml
+scikit-learn
+streamlit
+scipy
+langchain_openai
+langchain
+python-dotenv

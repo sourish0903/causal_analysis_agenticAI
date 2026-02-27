@@ -1,5 +1,6 @@
 # uv lockfile for causal_agent virtual environment
-# Generated packages list
+version = 1
+
 [pip]
 packages = [
   "pandas",
@@ -9,5 +10,17 @@ packages = [
   "streamlit",
   "scipy",
   "langchain_openai",
-  "langchain"
+  "langchain",
+  "python-dotenv",
 ]
+
+# uv pip-style requirements (plain pip format)
+pandas
+numpy
+econml
+scikit-learn
+streamlit
+scipy
+langchain_openai
+langchain
+python-dotenv
