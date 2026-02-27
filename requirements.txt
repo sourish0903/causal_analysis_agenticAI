@@ -1,4 +1,4 @@
-# Plain pip-style requirements for installation (used by uv pip install --requirements)
+# Plain pip-style requirements for installation (used by uv)
 pandas
 numpy
 econml
@@ -8,3 +8,6 @@ scipy
 langchain_openai
 langchain
 python-dotenv
+altair
+# optional (if your app uses datasets/examples):
+# vega_datasets
