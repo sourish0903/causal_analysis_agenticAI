@@ -1,0 +1,13 @@
+# uv lockfile for causal_agent virtual environment
+# Generated packages list
+[pip]
+packages = [
+  "pandas",
+  "numpy",
+  "econml",
+  "scikit-learn",
+  "streamlit",
+  "scipy",
+  "langchain_openai",
+  "langchain"
+]

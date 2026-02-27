@@ -24,6 +24,10 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import streamlit as st
+import dotenv
+
+# Load .env into environment (if present)
+dotenv.load_dotenv(ROOT.parent / ".env")
 
 # Ensure scripts/ is on sys.path so imports work when running from repo root
 ROOT = Path(__file__).resolve().parent
@@ -49,9 +53,8 @@ def _mask_key(k: str) -> str:
 
 
 def ensure_openai_credentials() -> Optional[str]:
-    # Priority: env var -> Streamlit secrets -> session_state -> user prompt
-    # key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", None) or st.session_state.get("OPENAI_API_KEY", None)
-    key = '<`your key here`>'
+    # Priority: env var -> .env -> Streamlit secrets -> session_state -> user prompt
+    key = os.environ.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", None) or st.session_state.get("OPENAI_API_KEY", None)
     if key:
         os.environ["OPENAI_API_KEY"] = key
         st.session_state["OPENAI_API_KEY"] = key
