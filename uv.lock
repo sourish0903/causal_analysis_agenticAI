@@ -1,1 +1,17 @@
-# uv lockfile for causal_agent virtual environmentversion = 1[pip]packages = [  "pandas",  "numpy",  "econml",  "scikit-learn",  "streamlit",  "scipy",  "langchain_openai",  "langchain",  "python-dotenv",  "altair",]
+# uv lockfile for causal_agent virtual environment
+
+version = 1
+
+[pip]
+packages = [
+  "pandas",
+  "numpy",
+  "econml",
+  "scikit-learn",
+  "streamlit",
+  "scipy",
+  "langchain_openai",
+  "langchain",
+  "python-dotenv",
+  "altair==4.2.2",
+]

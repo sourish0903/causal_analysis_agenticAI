@@ -8,6 +8,6 @@ scipy
 langchain_openai
 langchain
 python-dotenv
-altair
+altair==4.2.2
 # optional (if your app uses datasets/examples):
 # vega_datasets
