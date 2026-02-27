@@ -21,19 +21,39 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import logging
 
 import pandas as pd
 import streamlit as st
-import dotenv
-
-# Load .env into environment (if present)
-dotenv.load_dotenv(ROOT.parent / ".env")
+from dotenv import dotenv_values
 
 # Ensure scripts/ is on sys.path so imports work when running from repo root
 ROOT = Path(__file__).resolve().parent
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.append(str(SCRIPTS_DIR))
+
+import dotenv
+# Load .env into environment (if present)
+dotenv.load_dotenv(ROOT.parent / ".env")
+
+# Ensure .env key is cleaned (strip surrounding quotes) and exported to process env
+env_path = ROOT.parent / ".env"
+if env_path.exists():
+    vals = dotenv_values(env_path)
+    raw_key = vals.get("OPENAI_API_KEY")
+    if raw_key:
+        clean_key = raw_key.strip().strip('"\'' )
+        os.environ["OPENAI_API_KEY"] = clean_key
+        try:
+            st.session_state["OPENAI_API_KEY"] = clean_key
+        except Exception:
+            pass
+
+# Safe logging: show only a masked preview (first 8 chars) in logs
+logging.basicConfig(level=logging.INFO)
+masked = "<not set>" if not os.environ.get("OPENAI_API_KEY") else (os.environ.get("OPENAI_API_KEY")[:8] + "...")
+logging.info("OPENAI_API_KEY visible to process: %s", masked)
 
 from langchain_core.messages import HumanMessage
 from causal_agentic_ai import (  # type: ignore
@@ -53,19 +73,45 @@ def _mask_key(k: str) -> str:
 
 
 def ensure_openai_credentials() -> Optional[str]:
-    # Priority: env var -> .env -> Streamlit secrets -> session_state -> user prompt
-    key = os.environ.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", None) or st.session_state.get("OPENAI_API_KEY", None)
+    # Priority: env var -> .env -> session_state -> Streamlit secrets -> user prompt
+    # Avoid directly indexing st.secrets because Streamlit raises if no secrets file exists.
+    key = os.environ.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+    # session state may already hold the key from a previous interaction
+    try:
+        sess_key = st.session_state.get("OPENAI_API_KEY") if "OPENAI_API_KEY" in st.session_state else None
+    except Exception:
+        sess_key = None
+
+    if not key and sess_key:
+        key = sess_key
+
+    # Try Streamlit secrets safely
+    if not key:
+        try:
+            # st.secrets may raise StreamlitSecretNotFoundError if no secrets file is present
+            key = st.secrets.get("OPENAI_API_KEY") if hasattr(st, "secrets") else None
+        except Exception:
+            key = None
+
     if key:
         os.environ["OPENAI_API_KEY"] = key
-        st.session_state["OPENAI_API_KEY"] = key
+        try:
+            st.session_state["OPENAI_API_KEY"] = key
+        except Exception:
+            pass
         return key
 
+    # Fallback: ask user to enter key in the sidebar
     with st.sidebar:
         st.warning("OpenAI API key not found. Enter it to proceed.")
         key_input = st.text_input("OPENAI_API_KEY", type="password", help="This is kept in session only unless you add it to .streamlit/secrets.toml")
         if key_input:
             os.environ["OPENAI_API_KEY"] = key_input
-            st.session_state["OPENAI_API_KEY"] = key_input
+            try:
+                st.session_state["OPENAI_API_KEY"] = key_input
+            except Exception:
+                pass
             st.success("API key set for this session.")
             return key_input
     return None
@@ -100,17 +146,50 @@ st.write("Ask a question; the agent will choose the right tool (optimal levers, 
 # Data loader
 # ---------------------------------------------------------------------------
 st.header("1) Load processed dataset")
+
+# Try to load default dataset from data/sales_data_feature_processed.csv.zip
+def _load_default_from_zip() -> Optional[pd.DataFrame]:
+    zip_path = ROOT.parent / "data" / "sales_data_feature_processed.csv.zip"
+    if not zip_path.exists():
+        return None
+    try:
+        import zipfile
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            csv_files = [n for n in z.namelist() if n.endswith('.csv')]
+            if not csv_files:
+                st.warning(f"No CSV found inside {zip_path}")
+                return None
+            with z.open(csv_files[0]) as f:
+                df = pd.read_csv(f)
+                return df
+    except Exception as e:
+        st.warning(f"Failed to read zipped dataset {zip_path}: {e}")
+        return None
+
+# First, allow user upload as an override
 uploaded_file = st.file_uploader("Upload processed CSV (expects Store, Dept, Date, Weekly_Sales, MarkDown*, etc.)", type=["csv"])
 
+# If user didn't upload, try to load the default zip
+df_loaded = None
 if uploaded_file:
     try:
-        df_uploaded = pd.read_csv(uploaded_file)
-        st.success(f"Loaded dataframe with shape {df_uploaded.shape} and columns: {', '.join(df_uploaded.columns)}")
-        set_global_data(df_uploaded)
+        df_loaded = pd.read_csv(uploaded_file)
+        st.success(f"Loaded dataframe with shape {df_loaded.shape} and columns: {', '.join(df_loaded.columns)}")
     except Exception as exc:  # pragma: no cover - UI feedback path
         st.error(f"Failed to read CSV: {exc}")
 else:
-    st.info("Upload a dataset to enable the tools. Tools will error if no data is set.")
+    df_default = _load_default_from_zip()
+    if df_default is not None:
+        df_loaded = df_default
+        st.success(f"Loaded default dataset from data/sales_data_feature_processed.csv.zip with shape {df_loaded.shape}")
+    else:
+        st.info("Upload a dataset to enable the tools. Tools will error if no data is set.")
+
+if df_loaded is not None:
+    try:
+        set_global_data(df_loaded)
+    except Exception as exc:
+        st.error(f"Failed to set global data: {exc}")
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -156,8 +235,9 @@ with st.form("form_agent_query"):
     submitted = st.form_submit_button("Ask agent")
 
 if submitted:
-    if not uploaded_file:
-        st.error("Please upload a dataset first; the agent tools require data.")
+    # Proceed only if a dataset is available: either uploaded by user or loaded from default zip
+    if df_loaded is None:
+        st.error("Please upload a dataset first or ensure the default data file exists at data/sales_data_feature_processed.csv.zip; the agent tools require data.")
     elif not user_question.strip():
         st.error("Question cannot be empty.")
     else:
