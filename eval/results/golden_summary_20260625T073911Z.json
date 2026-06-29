@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-06-25T07:45:43.345950+00:00",
+  "n": 15,
+  "overall": {
+    "n": 15,
+    "tool_usage_accuracy": 1.0,
+    "tool_error_rate": 0.0,
+    "mean_faithfulness": 0.94,
+    "mean_relevance": 0.9867,
+    "mean_answer_relevance": 1.0
+  },
+  "by_category": {
+    "optimal_levers": {
+      "n": 5,
+      "tool_usage_accuracy": 1.0,
+      "tool_error_rate": 0.0,
+      "mean_faithfulness": 0.86,
+      "mean_relevance": 0.96,
+      "mean_answer_relevance": 1.0
+    },
+    "variable_impact": {
+      "n": 5,
+      "tool_usage_accuracy": 1.0,
+      "tool_error_rate": 0.0,
+      "mean_faithfulness": 1.0,
+      "mean_relevance": 1.0,
+      "mean_answer_relevance": 1.0
+    },
+    "what_if": {
+      "n": 5,
+      "tool_usage_accuracy": 1.0,
+      "tool_error_rate": 0.0,
+      "mean_faithfulness": 0.96,
+      "mean_relevance": 1.0,
+      "mean_answer_relevance": 1.0
+    }
+  },
+  "tool_routing_confusion": {
+    "find_optimal_levers": {
+      "find_optimal_levers": 5
+    },
+    "analyze_whatif_scenario": {
+      "analyze_whatif_scenario": 5
+    },
+    "analyze_variable_impact": {
+      "analyze_variable_impact": 5
+    }
+  },
+  "langsmith_project": "causal-agentic-ai",
+  "log_path": "/Users/sourishdey/Desktop/learning/causal_analysis_agenticAI/eval/results/golden_run_20260625T073911Z.jsonl"
+}

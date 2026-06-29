@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-06-25T07:19:20.388707+00:00",
+  "n": 10,
+  "overall": {
+    "n": 10,
+    "tool_usage_accuracy": 1.0,
+    "tool_error_rate": 0.0,
+    "mean_faithfulness": 0.93,
+    "mean_relevance": 1.0,
+    "mean_answer_relevance": 0.98
+  },
+  "by_category": {
+    "optimal_levers": {
+      "n": 5,
+      "tool_usage_accuracy": 1.0,
+      "tool_error_rate": 0.0,
+      "mean_faithfulness": 0.92,
+      "mean_relevance": 1.0,
+      "mean_answer_relevance": 1.0
+    },
+    "what_if": {
+      "n": 5,
+      "tool_usage_accuracy": 1.0,
+      "tool_error_rate": 0.0,
+      "mean_faithfulness": 0.94,
+      "mean_relevance": 1.0,
+      "mean_answer_relevance": 0.96
+    }
+  },
+  "tool_routing_confusion": {
+    "find_optimal_levers": {
+      "find_optimal_levers": 5
+    },
+    "analyze_whatif_scenario": {
+      "analyze_whatif_scenario": 5
+    }
+  },
+  "langsmith_project": "causal-agentic-ai",
+  "log_path": "/Users/sourishdey/Desktop/learning/causal_analysis_agenticAI/eval/results/golden_run_20260625T071526Z.jsonl"
+}

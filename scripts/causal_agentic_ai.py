@@ -34,6 +34,9 @@ from tools import (
     analyze_variable_impact,
 )
 
+# LangSmith observability: real-time tool-usage auditing + faithfulness/relevance scoring
+from observability import init_langsmith_tracing, AgenticObservabilityHandler
+
 # Optional imports for agent building
 try:
     from langchain_openai import ChatOpenAI
@@ -60,13 +63,17 @@ class AgentState(TypedDict):
     final_response: str
 
 
-def build_agent(tools: Optional[List] = None, model: str = "gpt-4o-mini", temperature: float = 0) -> tuple:
+def build_agent(tools: Optional[List] = None, model: str = "gpt-4o-mini", temperature: float = 0,
+                 enable_observability: bool = True) -> tuple:
     """Build and return a LangGraph agent with the causal analysis tools.
 
     Args:
         tools: List of tool functions. Defaults to [find_optimal_levers, analyze_whatif_scenario, analyze_variable_impact]
         model: LLM model name (default: "gpt-4o-mini")
         temperature: LLM temperature (default: 0)
+        enable_observability: If True (default), enable LangSmith tracing and bind a callback
+            that audits every tool call and scores faithfulness/relevance on each final answer.
+            Requires LANGSMITH_API_KEY (or LANGCHAIN_API_KEY) to be set; otherwise this is a no-op.
 
     Returns:
         (agent_executor, llm, llm_with_tools): Compiled agent and LLM instances
@@ -79,6 +86,9 @@ def build_agent(tools: Optional[List] = None, model: str = "gpt-4o-mini", temper
             "Agent stack not available. Install with: "
             "pip install langchain_openai langgraph"
         )
+
+    if enable_observability:
+        init_langsmith_tracing()
 
     # Initialize LLM
     llm = init_llm(model=model, temperature=temperature)
@@ -128,6 +138,10 @@ def build_agent(tools: Optional[List] = None, model: str = "gpt-4o-mini", temper
     workflow.add_edge("tools", "agent")
 
     agent_executor = workflow.compile()
+    if enable_observability:
+        agent_executor = agent_executor.with_config(
+            {"callbacks": [AgenticObservabilityHandler(judge_llm=llm, model_name=model)]}
+        )
     return agent_executor, llm, llm_with_tools
 
 

@@ -26,6 +26,21 @@ import logging
 import pandas as pd
 import streamlit as st
 from dotenv import dotenv_values
+try:
+    from huggingface_hub import hf_hub_download  # type: ignore
+    try:
+        # newer releases expose exceptions here
+        from huggingface_hub.utils import RepositoryNotFoundError, RevisionNotFoundError  # type: ignore
+    except Exception:
+        try:
+            # older layouts may expose elsewhere
+            from huggingface_hub.hf_api import RepositoryNotFoundError, RevisionNotFoundError  # type: ignore
+        except Exception:
+            # fallback to generic Exception so except (...) still works
+            RepositoryNotFoundError = RevisionNotFoundError = Exception
+except Exception:
+    hf_hub_download = None
+    RepositoryNotFoundError = RevisionNotFoundError = Exception
 
 # Ensure scripts/ is on sys.path so imports work when running from repo root
 ROOT = Path(__file__).resolve().parent
@@ -70,6 +85,8 @@ from causal_agentic_ai import (  # type: ignore
     set_global_data,
     set_last_user_question,
 )
+# Input/output safety guardrails (separate component, see scripts/guardrails.py)
+from guardrails import guard_input, guard_output  # type: ignore
 
 # Optional: initialize a lightweight LLM for semantic helpers (no-op if unavailable)
 def _mask_key(k: str) -> str:
@@ -158,21 +175,35 @@ st.header("1) Load processed dataset")
 # Try to load default dataset from data/sales_data_feature_processed.csv.zip
 def _load_default_from_zip() -> Optional[pd.DataFrame]:
     zip_path = ROOT.parent / "data" / "sales_data_feature_processed.csv.zip"
-    if not zip_path.exists():
-        return None
+    if zip_path.exists():
+        try:
+            import zipfile
+            with zipfile.ZipFile(zip_path, "r") as z:
+                csvs = [n for n in z.namelist() if n.endswith(".csv")]
+                if not csvs:
+                    st.warning(f"No CSV inside {zip_path}")
+                    return None
+                with z.open(csvs[0]) as f:
+                    return pd.read_csv(f)
+        except Exception as e:
+            st.warning(f"Failed to read local zip: {e}")
+            return None
+    # fallback: try HF hub (public repo)
     try:
+        hf_file = hf_hub_download(repo_id="sourish0903/causal_analysis_agenticAI", filename="data/sales_data_feature_processed.csv.zip")
         import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as z:
-            csv_files = [n for n in z.namelist() if n.endswith('.csv')]
-            if not csv_files:
-                st.warning(f"No CSV found inside {zip_path}")
+        with zipfile.ZipFile(hf_file, "r") as z:
+            csvs = [n for n in z.namelist() if n.endswith(".csv")]
+            if not csvs:
+                st.warning("No CSV inside HF zip")
                 return None
-            with z.open(csv_files[0]) as f:
-                df = pd.read_csv(f)
-                return df
+            with z.open(csvs[0]) as f:
+                return pd.read_csv(f)
+    except (RepositoryNotFoundError, RevisionNotFoundError) as e:
+        st.warning(f"HuggingFace hub access error: {e}")
     except Exception as e:
-        st.warning(f"Failed to read zipped dataset {zip_path}: {e}")
-        return None
+        st.warning(f"HF download failed (403 or network): {e}")
+    return None
 
 # First, allow user upload as an override
 uploaded_file = st.file_uploader("Upload processed CSV (expects Store, Dept, Date, Weekly_Sales, MarkDown*, etc.)", type=["csv"])
@@ -249,14 +280,26 @@ if submitted:
     elif not user_question.strip():
         st.error("Question cannot be empty.")
     else:
+        # --- INPUT GUARDRAIL: screen the question before it reaches the agent ---
+        input_check = guard_input(user_question)
+        if not input_check.allowed:
+            st.error(f"🛡️ {input_check.message or 'Question blocked by the input guardrail.'}")
+            if input_check.violations:
+                st.caption("Triggered checks: " + ", ".join(input_check.violations))
+            st.stop()
+        safe_question = input_check.text
+        if input_check.modified and input_check.violations:
+            st.info("🛡️ Your question was sanitized before processing (redacted: "
+                    + ", ".join(input_check.violations) + ").")
+
         try:
             # Conversation memory for continuity across questions
             if "chat_messages" not in st.session_state:
                 st.session_state.chat_messages = []
 
             # Remember last question for scenario inference helpers
-            set_last_user_question(user_question)
-            st.session_state.chat_messages.append(HumanMessage(content=user_question))
+            set_last_user_question(safe_question)
+            st.session_state.chat_messages.append(HumanMessage(content=safe_question))
 
             # Build or reuse agent
             if "_agent_bundle" not in st.session_state:
@@ -275,8 +318,19 @@ if submitted:
             last_msg = result["messages"][-1]
             st.session_state.chat_messages = result["messages"]
             content = getattr(last_msg, "content", "(no content)")
+
+            # --- OUTPUT GUARDRAIL: screen the answer before showing it ---
+            output_check = guard_output(content, question=safe_question)
             st.subheader("Agent response")
-            st.write(content)
+            if not output_check.allowed:
+                st.error(f"🛡️ {output_check.message or 'Response withheld by the output guardrail.'}")
+                if output_check.violations:
+                    st.caption("Triggered checks: " + ", ".join(output_check.violations))
+            else:
+                st.write(output_check.text)
+                if output_check.modified and output_check.violations:
+                    st.caption("🛡️ Output sanitized (redacted: "
+                               + ", ".join(output_check.violations) + ").")
 
             if debug_mode:
                 # Tool calls and arguments

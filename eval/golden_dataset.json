@@ -1,0 +1,130 @@
+{
+  "name": "causal-agent-golden",
+  "description": "Golden evaluation set for the causal agentic AI framework: 15 natural-language questions spanning the three tools (optimal-lever finding, what-if simulation, variable-impact attribution). Each example carries the tool the agent is expected to route to, used to score tool-usage accuracy.",
+  "version": "1.0",
+  "tools": ["find_optimal_levers", "analyze_whatif_scenario", "analyze_variable_impact"],
+  "examples": [
+    {
+      "id": "lev-01",
+      "category": "optimal_levers",
+      "question": "How can I increase weekly sales by 20% in store 1 department 1?",
+      "scope": {"store": 1, "dept": 1},
+      "expected_tool": "find_optimal_levers",
+      "notes": "Target-percentage growth question -> agent should search for the lever changes that hit +20%."
+    },
+    {
+      "id": "lev-02",
+      "category": "optimal_levers",
+      "question": "Which markdown lever should I pull to boost sales by 15% at store 4 department 92?",
+      "scope": {"store": 4, "dept": 92},
+      "expected_tool": "find_optimal_levers",
+      "notes": "Explicit 'which lever' phrasing with a target."
+    },
+    {
+      "id": "lev-03",
+      "category": "optimal_levers",
+      "question": "I want to grow sales by 10% in store 13 department 95 - what promotion changes do you recommend?",
+      "scope": {"store": 13, "dept": 95},
+      "expected_tool": "find_optimal_levers",
+      "notes": "Recommendation framing for a target change."
+    },
+    {
+      "id": "lev-04",
+      "category": "optimal_levers",
+      "question": "What combination of promotions gets me a 25% sales lift in store 20 department 92?",
+      "scope": {"store": 20, "dept": 92},
+      "expected_tool": "find_optimal_levers",
+      "notes": "Multi-lever combination request."
+    },
+    {
+      "id": "lev-05",
+      "category": "optimal_levers",
+      "question": "Find the best levers to raise weekly sales by 5% for store 2 department 1.",
+      "scope": {"store": 2, "dept": 1},
+      "expected_tool": "find_optimal_levers",
+      "notes": "Direct 'find the best levers' instruction."
+    },
+
+    {
+      "id": "wif-01",
+      "category": "what_if",
+      "question": "What happens to sales if I increase MarkDown1 by 10% in store 1 department 1?",
+      "scope": {"store": 1, "dept": 1},
+      "expected_tool": "analyze_whatif_scenario",
+      "notes": "Specified lever + magnitude -> simulate the outcome."
+    },
+    {
+      "id": "wif-02",
+      "category": "what_if",
+      "question": "If I set MarkDown5 20% higher in store 4 department 92, what is the expected sales impact?",
+      "scope": {"store": 4, "dept": 92},
+      "expected_tool": "analyze_whatif_scenario",
+      "notes": "Hypothetical change to a named lever."
+    },
+    {
+      "id": "wif-03",
+      "category": "what_if",
+      "question": "Simulate the effect of cutting MarkDown3 by 15% at store 10 department 72.",
+      "scope": {"store": 10, "dept": 72},
+      "expected_tool": "analyze_whatif_scenario",
+      "notes": "Explicit 'simulate' verb with a decrease."
+    },
+    {
+      "id": "wif-04",
+      "category": "what_if",
+      "question": "What would a 30% increase in MarkDown2 do to weekly sales in store 13 department 95?",
+      "scope": {"store": 13, "dept": 95},
+      "expected_tool": "analyze_whatif_scenario",
+      "notes": "Counterfactual on a specific lever."
+    },
+    {
+      "id": "wif-05",
+      "category": "what_if",
+      "question": "Suppose I raise MarkDown4 by 5% in store 20 department 92 - what sales change should I expect?",
+      "scope": {"store": 20, "dept": 92},
+      "expected_tool": "analyze_whatif_scenario",
+      "notes": "'Suppose ... what should I expect' counterfactual."
+    },
+
+    {
+      "id": "imp-01",
+      "category": "variable_impact",
+      "question": "What is the causal impact of MarkDown1 on weekly sales in store 1 department 1?",
+      "scope": {"store": 1, "dept": 1},
+      "expected_tool": "analyze_variable_impact",
+      "notes": "'Causal impact of X' attribution question."
+    },
+    {
+      "id": "imp-02",
+      "category": "variable_impact",
+      "question": "How much does fuel price affect weekly sales at store 4 department 92?",
+      "scope": {"store": 4, "dept": 92},
+      "expected_tool": "analyze_variable_impact",
+      "notes": "Effect of a macro confounder on the outcome."
+    },
+    {
+      "id": "imp-03",
+      "category": "variable_impact",
+      "question": "Does unemployment have a causal effect on weekly sales for store 13 department 95?",
+      "scope": {"store": 13, "dept": 95},
+      "expected_tool": "analyze_variable_impact",
+      "notes": "Yes/no causal-effect question about a confounder."
+    },
+    {
+      "id": "imp-04",
+      "category": "variable_impact",
+      "question": "Quantify the impact of CPI on sales across store 10 department 72.",
+      "scope": {"store": 10, "dept": 72},
+      "expected_tool": "analyze_variable_impact",
+      "notes": "'Quantify the impact' attribution."
+    },
+    {
+      "id": "imp-05",
+      "category": "variable_impact",
+      "question": "What is the effect of holidays on weekly sales in store 2 department 1?",
+      "scope": {"store": 2, "dept": 1},
+      "expected_tool": "analyze_variable_impact",
+      "notes": "Effect of the IsHoliday indicator on sales."
+    }
+  ]
+}
